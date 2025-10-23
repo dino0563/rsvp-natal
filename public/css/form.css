@@ -1,0 +1,232 @@
+/* ====== Reset ringan & layout dasar ====== */
+html,
+body {
+    overflow-x: hidden;
+}
+
+main {
+    position: relative;
+    z-index: 10;
+} /* konten */
+
+body {
+    background: radial-gradient(
+            1200px 600px at 50% -10%,
+            #ae2e3a 0%,
+            transparent 60%
+        ),
+        linear-gradient(180deg, #8d1e2c, #6e1423);
+    overscroll-behavior-y: none;
+}
+
+/* ====== Pattern SVG layar penuh ====== */
+
+/* Latar pattern khusus 1080x1920 */
+.xmas-pattern {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    opacity: 20; /* halus, gak mengganggu konten */
+    mix-blend-mode: soft-light; /* nyatu sama background merah */
+}
+
+/* ====== Salju ====== */
+.flake {
+    position: fixed;
+    top: -10px;
+    width: 10px;
+    height: 10px;
+    z-index: 2; /* di depan pohon, di belakang konten */
+    background: radial-gradient(circle, #fff 0 45%, transparent 46%);
+    opacity: 0.75;
+    border-radius: 9999px;
+    pointer-events: none;
+    animation: fall var(--t, 16s) linear infinite;
+    will-change: transform, opacity;
+}
+
+@keyframes fall {
+    to {
+        transform: translateY(110vh) translateX(calc(var(--sx, 30px)));
+        opacity: 0.95;
+    }
+}
+
+/* ====== Pohon samping: anchor pojok bawah ====== */
+.pine {
+    position: fixed;
+    bottom: 0;
+    z-index: 1; /* di atas pattern, di bawah salju & konten */
+    width: clamp(260px, 28vw, 520px);
+    height: auto;
+    transform-origin: bottom center;
+    filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.35));
+    opacity: 0.95;
+    pointer-events: none;
+}
+.pine-left {
+    left: max(-8vw, -72px);
+    transform: translateY(6px);
+}
+.pine-right {
+    right: max(-8vw, -72px);
+    transform: scaleX(-1) translateY(6px);
+}
+
+/* 2K/4K boleh lebih gede dikit */
+@media (min-width: 1536px) {
+    .pine {
+        width: clamp(320px, 30vw, 640px);
+    }
+}
+
+/* ====== Dekor bawah section (kalau dipakai) ====== */
+.decor-below {
+    position: relative;
+    height: 180px;
+    margin-top: -6px;
+    pointer-events: none;
+    z-index: 0;
+}
+.decor-below .cluster {
+    position: absolute;
+    bottom: 0;
+    width: min(46vw, 680px);
+    filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.35));
+}
+.decor-below .left {
+    left: -70px;
+}
+.decor-below .right {
+    right: -70px;
+    transform: scaleX(-1);
+}
+.snowplate {
+    position: absolute;
+    left: 50%;
+    bottom: -10px;
+    transform: translateX(-50%);
+    width: min(560px, 72%);
+    height: 26px;
+    background: radial-gradient(
+        120% 100% at 50% 30%,
+        rgba(255, 255, 255, 0.95),
+        rgba(255, 255, 255, 0.2) 70%
+    );
+    border-radius: 999px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    opacity: 0.95;
+}
+
+/* ====== Blob hijau (WARISAN). Matikan atau hapus kalau sudah pakai pine. ====== */
+.blob {
+    position: fixed;
+    z-index: -1;
+    width: 34vmin;
+    height: 34vmin;
+    opacity: 0.9;
+    filter: drop-shadow(0 8px 22px rgba(0, 0, 0, 0.35));
+    background: radial-gradient(
+            circle at 30% 30%,
+            #1a7a49 0 55%,
+            transparent 56%
+        ),
+        radial-gradient(circle at 65% 70%, #0f4d2d 0 55%, transparent 56%),
+        radial-gradient(120% 60% at 50% 100%, #217a4c 0 60%, transparent 61%);
+    border-radius: 28% 72% 68% 32%/40% 30% 70% 60%;
+    transform-origin: center;
+    will-change: transform, filter, opacity;
+}
+
+/* ====== Tombol submit dengan efek sweep ====== */
+#submitBtn {
+    position: relative;
+    overflow: hidden;
+}
+#submitBtn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        120deg,
+        rgba(255, 255, 255, 0) 20%,
+        rgba(255, 255, 255, 0.35) 50%,
+        rgba(255, 255, 255, 0) 80%
+    );
+    transform: translateX(-140%) skewX(-20deg);
+    transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+    pointer-events: none;
+}
+#submitBtn:hover::after,
+#submitBtn:focus-visible::after {
+    transform: translateX(140%) skewX(-20deg);
+}
+
+/* Spinner */
+#submitBtn .btn-spinner {
+    display: none;
+    width: 1.1em;
+    height: 1.1em;
+    margin-left: 0.6rem;
+    vertical-align: -2px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+#submitBtn.loading .btn-spinner {
+    display: inline-block;
+}
+#submitBtn.loading::after {
+    opacity: 0;
+} /* matiin sweep pas loading */
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ====== Prefer-reduced-motion: sopan dikit lah ====== */
+@media (prefers-reduced-motion: reduce) {
+    .flake {
+        animation: none !important;
+    }
+    .parallax {
+        transform: none !important;
+    }
+    .blob {
+        animation: none !important;
+    }
+    .btn-sweep .sweep {
+        transition: none;
+    }
+    .btn-sweep:hover .sweep {
+        transform: none;
+        opacity: 0.15;
+    }
+}
+
+/* ====== Lampu kelap-kelip (kalau dipakai di dekor lain) ====== */
+@keyframes blink {
+    0%,
+    100% {
+        opacity: 0.35;
+        transform: translateY(0);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(1px);
+    }
+}
+
+/* ====== Responsif ====== */
+@media (max-width: 1023px) {
+    .pine,
+    .decor-below {
+        display: none;
+    }
+}
