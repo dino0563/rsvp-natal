@@ -1,0 +1,19 @@
+{
+  "name": "RSVP Natal Teens X Youth 2025",
+  "short_name": "RSVP Natal",
+  "icons": [
+    {
+      "src": "android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#8d1e2c",
+  "background_color": "#fff6e8",
+  "display": "standalone"
+}
