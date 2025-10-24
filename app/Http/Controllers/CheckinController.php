@@ -2,38 +2,111 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\StatusTicket;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
+
+
 
 class CheckinController extends Controller
 {
     public function verify(Request $req)
     {
-        $payload = $req->string('payload');
-        $hash = hash('sha256', $payload);
-
-        // anti-dupe 10 detik
-        $key = 'scan-dupe:'.$hash;
-        if (Cache::has($key)) {
-            return response()->json(['ok'=>false,'msg'=>'Sudah dipakai (duplikat)'], 409);
+        $payload = (string) $req->input('payload', '');
+        $preview = $req->boolean('preview', false);
+        $confirm = $req->boolean('confirm', false);
+        if ($preview && $confirm) {
+            $confirm = false; // safety: kalau dua-duanya true, anggap preview
         }
 
-        $ticket = Ticket::where('qr_hash',$hash)->first();
-        if (!$ticket) return response()->json(['ok'=>false,'msg'=>'Tidak dikenal'],404);
+        // QR payload: TKT:{CODE}|RID:{id}
+        if (!preg_match('/TKT:([A-Z0-9]{6,12})\|RID:(\d+)/', $payload, $m)) {
+            return response()->json([
+                'ok' => false, 'status' => 'UNKNOWN', 'msg' => 'QR tidak valid.'
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
-        if ($ticket->used_at) return response()->json(['ok'=>false,'msg'=>'Sudah dipakai'],409);
+        [$code, $rid] = [$m[1], (int) $m[2]];
 
-        $ticket->forceFill([
-            'used_at'=> now(),
-            'used_by_staff_id'=> $req->user()->id,
-        ])->save();
+        $ticket = Ticket::query()
+            ->with('registration')
+            ->where('code', $code)
+            ->where('registration_id', $rid)
+            ->first();
 
-        Cache::put($key, 1, 10);
+        if (!$ticket) {
+            return response()->json([
+                'ok' => false, 'status' => 'UNKNOWN', 'msg' => 'QR tidak dikenal.'
+            ], Response::HTTP_OK);
+        }
 
-        return response()->json(['ok'=>true,'name'=>$ticket->registration->name]);
+        $reg = $ticket->registration;
+
+        // Sudah dipakai?
+        if ($ticket->used_at) {
+            return response()->json([
+                'ok'    => false,
+                'status'=> 'USED',
+                'name'  => $reg?->name,
+                'code'  => $ticket->code,
+                'msg'   => 'QR sudah dipakai pada '.$ticket->used_at->timezone(config('app.timezone'))->format('d M Y H:i'),
+            ], Response::HTTP_OK);
+        }
+
+        // PREVIEW: tidak ubah DB, hanya beri info
+        if ($preview) {
+            return response()->json([
+                'ok'     => true,
+                'status' => 'VALID',
+                'name'   => $reg?->name,
+                'code'   => $ticket->code,
+            ], Response::HTTP_OK);
+        }
+
+        // CONFIRM: tandai used, tolak duplikat 10 detik
+        if ($confirm) {
+            $dupKey = 'checkin:dupe:'.$ticket->id;
+            if (Cache::has($dupKey)) {
+                return response()->json([
+                    'ok' => false, 'status' => 'DUPLICATE', 'msg' => 'QR baru saja dipindai. Coba lagi sebentar.'
+                ], Response::HTTP_OK);
+            }
+
+            $ticket->forceFill([
+                'used_at'          => now(),
+                'used_by_staff_id' => Auth::id(),
+            ])->save();
+
+            // kalau kamu menyimpan status di registrations
+            if (property_exists($reg, 'status_ticket')) {
+                $reg->update(['status_ticket' => StatusTicket::USED]);
+            }
+
+            // set dupe window 10 detik
+            Cache::put($dupKey, 1, now()->addSeconds(10));
+
+            return response()->json([
+                'ok'     => true,
+                'status' => 'USED_SET',
+                'name'   => $reg?->name,
+                'code'   => $ticket->code,
+                'msg'    => 'Check-in berhasil.',
+            ], Response::HTTP_OK);
+        }
+
+        // fallback: perlakukan sebagai preview
+        return response()->json([
+            'ok'     => true,
+            'status' => 'VALID',
+            'name'   => $reg?->name,
+            'code'   => $ticket->code,
+        ], Response::HTTP_OK);
     }
+
 
     // cache offline 5 ribu token
     public function cacheTokens()
