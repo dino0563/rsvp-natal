@@ -10,13 +10,13 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 class DashboardStats extends BaseWidget
 {
     // full width di grid 12 kolom
-    protected int|string|array $columnSpan = ['lg' => 6];
+    protected int|string|array $columnSpan = 'full';
 
     // 5 kolom di layar besar biar tidak “gantung” satu kotak
     protected function getColumns(): int|array
     {
         return [
-            'md' => 1,
+            'sm' => 1,
             'lg' => 5,
         ];
     }

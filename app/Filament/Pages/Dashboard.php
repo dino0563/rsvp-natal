@@ -19,6 +19,7 @@ class Dashboard extends BaseDashboard
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHome;
     protected static ?string $navigationLabel = 'Dashboard';
 
+    // protected static ?string $maxContentWidth = '7xl';
     // Grid 12 kolom biar gampang atur span widget
     public function getColumns(): int|array
     {

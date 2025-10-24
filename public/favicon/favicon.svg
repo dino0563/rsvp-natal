@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <style>
+      .bg { fill: #fff6e8; stroke: #8d1e2c; stroke-width: 32; }
+      .tree { fill: #165b36; }
+      .trunk { fill: #5b0f1a; }
+      .star { fill: #d9b86c; }
+    </style>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="180" class="bg"/>
+  <polygon class="tree" points="512,265 285,760 739,760"/>
+  <polygon class="tree" points="512,370 330,716 694,716"/>
+  <polygon class="tree" points="512,445 380,675 644,675"/>
+  <rect class="trunk" x="480" y="746" width="88" height="110"/>
+  <polygon class="star" points="512,210 548,296 640,302 566,357 590,446 512,395 434,446 458,357 384,302 476,296"/>
+</svg>

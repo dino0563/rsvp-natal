@@ -5,6 +5,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- Favicon & PWA -->
+    <link rel="icon" type="image/svg+xml" href="{{ asset ('favicon/favicon.svg')}} ">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset ('favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset ('favicon/favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset ('favicon/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ asset ('favicon/site.webmanifest') }}">
+    <link rel="mask-icon" href="{{ asset ('favicon/safari-pinned-tab.svg') }}">
+    <meta name="theme-color" content="#8d1e2c">
     <title>RSVP Natal Teens X Youth 2025</title>
 
     <!-- Tailwind Play CDN -->
@@ -236,19 +244,19 @@
         radial-gradient(120% 80% at 50% -10%, #b12f3c 0, #7b1b27 55%, #5b0f1a 85%),
         linear-gradient(180deg,#7c1c28,#5b0f1a)">
 
-@php
-use Illuminate\Support\Facades\Storage;
-$bannerPath = \App\Support\Settings::get('banner_path');
-$bannerUrl  = $bannerPath ? Storage::disk('public')->url($bannerPath) : null;
-@endphp
+            @php
+                use Illuminate\Support\Facades\Storage;
+                $bannerPath = \App\Support\Settings::get('banner_path');
+                $bannerUrl = $bannerPath ? Storage::disk('public')->url($bannerPath) : null;
+            @endphp
             <!-- Banner -->
             <div class="w-full rounded-2xl overflow-hidden shadow-2xl relative group">
-                @if($bannerUrl)
-    <img src="{{ $bannerUrl }}" alt="Banner" class="w-full h-full object-cover">
-  @else
-    <img src="https://template.canva.com/EAFUP94L0a4/2/0/1600w-QZhOwIvXUI4.jpg"
-         alt="Banner default" class="w-full h-full object-cover">
-  @endif
+                @if ($bannerUrl)
+                    <img src="{{ $bannerUrl }}" alt="Banner" class="w-full h-full object-cover">
+                @else
+                    <img src="https://template.canva.com/EAFUP94L0a4/2/0/1600w-QZhOwIvXUI4.jpg" alt="Banner default"
+                        class="w-full h-full object-cover">
+                @endif
                 <div
                     class="absolute inset-0 bg-gradient-to-t from-black/25 via-black/0 to-black/0 pointer-events-none">
                 </div>
