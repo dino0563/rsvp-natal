@@ -6,13 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Favicon & PWA -->
-    <link rel="icon" type="image/svg+xml" href="{{ asset ('favicon/favicon.svg')}} ">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset ('favicon/favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset ('favicon/favicon-16x16.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset ('favicon/apple-touch-icon.png') }}">
-    <link rel="manifest" href="{{ asset ('favicon/site.webmanifest') }}">
-    <link rel="mask-icon" href="{{ asset ('favicon/safari-pinned-tab.svg') }}">
-    <meta name="theme-color" content="#8d1e2c">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon/favicon.svg') }} ">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ asset('favicon/site.webmanifest') }}">
+    <link rel="mask-icon" href="{{ asset('favicon/safari-pinned-tab.svg') }}">
+    <meta name="theme-color" content="{{ \App\Support\Settings::get('theme_brand_primary', '#8d1e2c') }}">
     <title>RSVP Natal Teens X Youth 2025</title>
 
     <!-- Tailwind Play CDN -->
@@ -229,7 +229,8 @@
             </pattern>
         </defs>
 
-        {{-- <rect x="0" y="0" width="100%" height="100%" fill="url(#xmasTile)" /> --}}
+        {{--
+        <rect x="0" y="0" width="100%" height="100%" fill="url(#xmasTile)" /> --}}
         <g id="bg-1080x1920"></g>
     </svg>
 
@@ -240,9 +241,7 @@
     <main class="relative z-10 mx-auto max-w-5xl p-5 md:p-8">
         <section
             class="relative isolate z-[5] rounded-3xl p-5 shadow-[inset_0_20px_50px_rgba(0,0,0,.35),0_30px_80px_rgba(0,0,0,.35)] backdrop-blur-[0.5px]"
-            style="background:
-        radial-gradient(120% 80% at 50% -10%, #b12f3c 0, #7b1b27 55%, #5b0f1a 85%),
-        linear-gradient(180deg,#7c1c28,#5b0f1a)">
+            style="background:radial-gradient(120% 80% at 50% -10%,var(--brand-600) 0,var(--brand-800) 55%,var(--brand-900) 85%),linear-gradient(180deg,var(--brand-700),var(--brand-900));">
 
             @php
                 use Illuminate\Support\Facades\Storage;
@@ -274,8 +273,8 @@
 
             <!-- Form -->
             <div
-                class="mt-5 md:mt-6 bg-paper text-brandRedDeep rounded-2xl p-5 md:p-6 shadow-card border border-black/5">
-                <h3 class="m-0 font-title text-2xl text-brandRedDeep">Formulir Kehadiran</h3>
+                class="mt-5 md:mt-6 bg-[var(--paper)] text-[var(--brand-900)] rounded-2xl p-5 md:p-6 shadow-card border border-black/5">
+                <h3 class="m-0 font-title text-2xl text-[var(--brand-900)]">Formulir Kehadiran</h3>
 
                 <form id="rsvp-form" class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4"
                     action="{{ route('rsvp.store') }}" method="POST" novalidate>
@@ -283,7 +282,7 @@
 
                     <!-- Nama -->
                     <div>
-                        <label for="nama" class="block text-sm font-semibold text-brandRedDeep mb-1.5">Nama
+                        <label for="nama" class="block text-sm font-semibold text-[var(--brand-900)] mb-1.5">Nama
                             Lengkap</label>
                         <input id="nama" name="nama" type="text" required value="{{ old('nama') }}"
                             class="w-full rounded-xl border border-[#e7d9c3] bg-white px-4 py-3 shadow-inner focus:outline-none focus:border-gold focus:ring-4 focus:ring-[#d9b86c38]"
@@ -295,12 +294,11 @@
 
                     <!-- Telp -->
                     <div>
-                        <label for="telp" class="block text-sm font-semibold text-brandRedDeep mb-1.5">Nomor
+                        <label for="telp" class="block text-sm font-semibold text-[var(--brand-900)] mb-1.5">Nomor
                             Telepon</label>
                         <input id="telp" name="telp" type="tel" inputmode="numeric" required
                             placeholder="08xxxxxxxxxx" value="{{ old('telp') }}"
                             class="w-full rounded-xl border border-[#e7d9c3] bg-white px-4 py-3 shadow-inner focus:outline-none focus:border-gold focus:ring-4 focus:ring-[#d9b86c38]">
-                        {{-- <div id="telp-e164" class="text-xs mt-1 text-brandRedDeep/70 select-none">E.164: —</div> --}}
                         @error('telp')
                             <div class="text-sm text-red-600 mt-1">{{ $message }}</div>
                         @enderror
@@ -309,7 +307,7 @@
                     <!-- Usia -->
                     <div>
                         <label for="usia"
-                            class="block text-sm font-semibold text-brandRedDeep mb-1.5">Usia</label>
+                            class="block text-sm font-semibold text-[var(--brand-900)] mb-1.5">Usia</label>
                         <input id="usia" name="usia" type="number" min="10" max="50" required
                             value="{{ old('usia') }}"
                             class="w-full rounded-xl border border-[#e7d9c3] bg-white px-4 py-3 shadow-inner focus:outline-none focus:border-gold focus:ring-4 focus:ring-[#d9b86c38]">
@@ -320,7 +318,8 @@
 
                     <!-- Jenjang -->
                     <div>
-                        <label for="jenjang" class="block text-sm font-semibold text-brandRedDeep mb-1.5">Jenjang
+                        <label for="jenjang"
+                            class="block text-sm font-semibold text-[var(--brand-900)] mb-1.5">Jenjang
                             Pendidikan</label>
                         <select id="jenjang" name="jenjang" required
                             class="w-full rounded-xl border border-[#e7d9c3] bg-white px-4 py-3 shadow-inner focus:outline-none focus:border-gold focus:ring-4 focus:ring-[#d9b86c38]">
@@ -337,7 +336,7 @@
 
                     <!-- Sekolah -->
                     <div id="wrap-sekolah">
-                        <label for="sekolah" class="block text-sm font-semibold text-brandRedDeep mb-1.5">Nama
+                        <label for="sekolah" class="block text-sm font-semibold text-[var(--brand-900)] mb-1.5">Nama
                             Sekolah/Kampus</label>
                         <input id="sekolah" name="sekolah" type="text" required value="{{ old('sekolah') }}"
                             class="w-full rounded-xl border border-[#e7d9c3] bg-white px-4 py-3 shadow-inner focus:outline-none focus:border-gold focus:ring-4 focus:ring-[#d9b86c38]">
@@ -348,8 +347,8 @@
 
                     <!-- Info -->
                     <div id="wrap-informasi">
-                        <label for="informasi" class="block text-sm font-semibold text-brandRedDeep mb-1.5">Tau acara
-                            ini dari mana?</label>
+                        <label for="informasi" class="block text-sm font-semibold text-[var(--brand-900)] mb-1.5">Tau
+                            acara ini dari mana?</label>
                         <input id="informasi" name="informasi" type="text" required
                             value="{{ old('informasi') }}"
                             class="w-full rounded-xl border border-[#e7d9c3] bg-white px-4 py-3 shadow-inner focus:outline-none focus:border-gold focus:ring-4 focus:ring-[#d9b86c38]">
@@ -360,16 +359,16 @@
 
                     <!-- Gereja -->
                     <div id="wrap-gereja" class="{{ old('gereja') === 'lainnya' ? '' : 'md:col-span-2' }}">
-                        <label for="gereja" class="block text-sm font-semibold text-brandRedDeep mb-1.5">Anggota
-                            gereja mana</label>
+                        <label for="gereja"
+                            class="block text-sm font-semibold text-[var(--brand-900)] mb-1.5">Anggota gereja
+                            mana</label>
                         <select id="gereja" name="gereja" required
                             class="w-full rounded-xl border border-[#e7d9c3] bg-white px-4 py-3 shadow-inner focus:outline-none focus:border-gold focus:ring-4 focus:ring-[#d9b86c38]">
                             <option value="" disabled {{ old('gereja') ? '' : 'selected' }}>Pilih gereja
                             </option>
                             @foreach (['GKT 3', 'GKJW', 'GBI', 'GPdI', 'GSJA', 'HKBP', 'Katolik', 'lainnya'] as $opt)
                                 <option value="{{ $opt }}" {{ old('gereja') === $opt ? 'selected' : '' }}>
-                                    {{ $opt }}
-                                </option>
+                                    {{ $opt }}</option>
                             @endforeach
                         </select>
                         @error('gereja')
@@ -379,8 +378,9 @@
 
                     <!-- Gereja manual -->
                     <div id="wrap-gereja-lain" class="{{ old('gereja') === 'lainnya' ? '' : 'hidden' }}">
-                        <label for="gereja_manual" class="block text-sm font-semibold text-brandRedDeep mb-1.5">Nama
-                            Gereja (Lainnya)</label>
+                        <label for="gereja_manual"
+                            class="block text-sm font-semibold text-[var(--brand-900)] mb-1.5">Nama Gereja
+                            (Lainnya)</label>
                         <input id="gereja_manual" name="gereja_manual" type="text"
                             value="{{ old('gereja_manual') }}"
                             class="w-full rounded-xl border border-[#e7d9c3] bg-white px-4 py-3 shadow-inner focus:outline-none focus:border-gold focus:ring-4 focus:ring-[#d9b86c38]"
@@ -390,13 +390,14 @@
                         @enderror
                     </div>
 
+
                     <!-- Consent -->
                     <div class="md:col-span-2">
                         <label class="inline-flex items-start gap-3">
                             <input id="consent" type="checkbox" name="consent"
                                 {{ old('consent') ? 'checked' : '' }}
                                 class="mt-1.5 w-5 h-5 rounded border-[#e7d9c3] text-brandRed focus:ring-gold">
-                            <span class="text-sm text-brandRedDeep/90">Saya menyetujui penggunaan data ini untuk
+                            <span class="text-sm text-[var(--brand-900)]">Saya menyetujui penggunaan data ini untuk
                                 keperluan pembuatan tiket, pengiriman, dan check-in acara sesuai kebijakan privasi
                                 panitia.</span>
                         </label>
@@ -408,11 +409,7 @@
                     <!-- Submit -->
                     <div class="md:col-span-2 flex items-center justify-center md:justify-start gap-3 pt-1">
                         <button id="submitBtn" type="submit"
-                            class="relative px-5 py-3 rounded-xl font-semibold text-white
-           bg-gradient-to-b from-[#e04848] to-brandRed
-           shadow-[0_10px_20px_rgba(181,31,45,.35)]
-           transition-transform focus:outline-none focus:ring-4 focus:ring-[#d9b86c38]
-           active:translate-y-[1px] overflow-hidden">
+                            class="relative px-5 py-3 rounded-xl font-semibold text-white bg-gradient-to-b from-[var(--brand-700)] to-[var(--brand)] shadow-[0_10px_20px_rgba(181,31,45,.35)] transition-transform focus:outline-none focus:ring-4 focus:ring-[color-mix(in_srgb,var(--gold)_22%,transparent)] active:translate-y-[1px] overflow-hidden">
                             <span class="btn-label">Kirim &amp; Dapatkan Tiket</span>
                             <span class="btn-spinner" aria-hidden="true"></span>
                         </button>
@@ -428,7 +425,7 @@
                     Pratinjau format E.164 tampil di bawah field.</p> --}}
             </div>
 
-            <p class="text-center text-cream/75 text-xs mt-4">© 2025 Teens X Youth • QR hanya valid saat dipindai staf.
+            <p class="text-center text-[var(--brand-900)] text-xs mt-4">© 2025 Teens X Youth • QR hanya valid saat dipindai staf.
             </p>
         </section>
     </main>

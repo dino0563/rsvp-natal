@@ -1,70 +1,103 @@
 @php
-    $form = $get('theme_form_base') ?? '#8d1e2c';
-    $ticket = $get('theme_ticket_base') ?? '#8d1e2c';
-    $nf = $get('theme_404_base') ?? '#0b0b0b';
+  // Palet global
+  $cream  = $cream  ?? '#fff6e8';
+  $paper  = $paper  ?? '#fff9f1';
+  $pine   = $pine   ?? '#165b36';
+  $gold   = $gold   ?? '#d9b86c';
+
+  // Brand global dan override
+  $brand     = $brand     ?? '#8d1e2c';
+  $form      = $form      ?? null;
+  $ticket    = $ticket    ?? null;
+  $brand404  = $brand404  ?? null;
+
+  // Mode
+  $split  = (bool) ($split ?? false);   // true kalau toggle custom per halaman ON
+  $target = $target ?? 'form';          // 'form' | 'ticket' | '404' (dipakai kalau split = false)
+
+  // Brand efektif per halaman
+  $brandForm   = $form     ?: $brand;
+  $brandTicket = $ticket   ?: $brand;
+  $brandError  = $brand404 ?: $brand;
+
+  // Brand tunggal untuk non-split
+  $brandSingle = match ($target) {
+    'ticket' => $brandTicket,
+    '404'    => $brandError,
+    default  => $brandForm,
+  };
+
+  // Background untuk swatch brand:
+  // - split: satu kotak dibelah menjadi 3 kolom
+  // - non-split: satu warna padat
+  $brandBg = $split
+    ? "linear-gradient(90deg, {$brandForm} 0%, {$brandForm} 33.333%, {$brandTicket} 33.333%, {$brandTicket} 66.666%, {$brandError} 66.666%, {$brandError} 100%)"
+    : $brandSingle;
 @endphp
 
-<style>
-    :root {
-        --preview-form: {{ $form }};
-        --preview-ticket: {{ $ticket }};
-        --preview-404: {{ $nf }};
-    }
+<div class="theme-preview p-5 rounded-2xl">
+  {{-- Swatch global (selalu sama di semua halaman) --}}
+  <div class="grid gap-4 lg:grid-cols-4">
+    <div class="theme-swatch" style="background: {{ $cream }}; color:#111">
+      <div class="font-medium">Background Cream</div>
+      <div class="opacity-80 text-xs">{{ $cream }}</div>
+    </div>
+    <div class="theme-swatch" style="background: {{ $paper }}; color:#111">
+      <div class="font-medium">Surface Paper</div>
+      <div class="opacity-80 text-xs">{{ $paper }}</div>
+    </div>
+    <div class="theme-swatch" style="background: {{ $pine }}; color:#fff">
+      <div class="font-medium">Accent Pine</div>
+      <div class="opacity-80 text-xs">{{ $pine }}</div>
+    </div>
+    <div class="theme-swatch" style="background: {{ $gold }}; color:#111">
+      <div class="font-medium">Accent Gold</div>
+      <div class="opacity-80 text-xs">{{ $gold }}</div>
+    </div>
+  </div>
 
-    .preview-card {
-        border-radius: 16px;
-        padding: 16px;
-        border: 1px solid #e5e7eb;
-        background: white
-    }
+  {{-- Satu swatch brand: dibelah tiga saat split = true --}}
+  <div class="grid gap-4 lg:grid-cols-5 items-stretch">
+    <div class="theme-swatch relative overflow-hidden lg:col-span-3"
+         style="background: {{ $brandBg }}; color:#fff;">
+      <div class="font-medium">
+        Brand
+        @if ($split)
+          <span class="opacity-70 text-xs">(Form | Ticket | 404)</span>
+        @else
+          <span class="opacity-70 text-xs">({{ strtoupper($target) }} preview)</span>
+        @endif
+      </div>
+      <div class="opacity-80 text-xs leading-relaxed">
+        @if ($split)
+          <span>Form: {{ $brandForm }}</span> &middot;
+          <span>Ticket: {{ $brandTicket }}</span> &middot;
+          <span>404: {{ $brandError }}</span>
+        @else
+          {{ $brandSingle }}
+        @endif
+      </div>
 
-    .preview-banner {
-        height: 64px;
-        border-radius: 12px;
-        background:
-            radial-gradient(120% 80% at 50% -10%, color-mix(in srgb, var(--color) 85%, white) 0 60%, transparent 70%),
-            linear-gradient(180deg, color-mix(in srgb, var(--color) 78%, black), color-mix(in srgb, var(--color) 90%, black));
-        box-shadow: inset 0 10px 30px rgba(0, 0, 0, .25);
-    }
-
-    .preview-chip {
-        display: inline-block;
-        font: 12px/1.8 system-ui;
-        padding: 0 10px;
-        border-radius: 999px;
-        color: #fff;
-        background: color-mix(in srgb, var(--color) 85%, black)
-    }
-
-    .grid-3 {
-        display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(1, minmax(0, 1fr))
-    }
-
-    @media (min-width: 1024px) {
-        .grid-3 {
-            grid-template-columns: repeat(3, minmax(0, 1fr))
-        }
-    }
-</style>
-
-<div class="grid-3">
-    <div class="preview-card">
-        <div class="preview-banner" style="--color: var(--preview-form)"></div>
-        <h4 style="margin:12px 0 6px;font:600 14px/1.2 system-ui">Form RSVP</h4>
-        <div class="preview-chip" style="--color: var(--preview-form)">CTA • Kirim</div>
+      @if ($split)
+        {{-- pemisah visual tipis di 1/3 dan 2/3 --}}
+        <div style="position:absolute; top:0; bottom:0; left:33.333%; width:1px; background:rgba(255,255,255,.25)"></div>
+        <div style="position:absolute; top:0; bottom:0; left:66.666%; width:1px; background:rgba(255,255,255,.25)"></div>
+      @endif
     </div>
 
-    <div class="preview-card">
-        <div class="preview-banner" style="--color: var(--preview-ticket)"></div>
-        <h4 style="margin:12px 0 6px;font:600 14px/1.2 system-ui">Halaman Tiket</h4>
-        <div class="preview-chip" style="--color: var(--preview-ticket)">Badge • Belum digunakan</div>
-    </div>
-
-    <div class="preview-card">
-        <div class="preview-banner" style="--color: var(--preview-404)"></div>
-        <h4 style="margin:12px 0 6px;font:600 14px/1.2 system-ui">404 Not Found</h4>
-        <div class="preview-chip" style="--color: var(--preview-404)">Back to home</div>
-    </div>
+    {{-- Contoh tombol & badge (sekadar context visual). Tidak perlu dibelah, ini cuma contoh. --}}
+  </div>
 </div>
+
+<style>
+  .theme-preview{
+    border-radius: 24px;
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.07),
+      0 8px 24px rgba(0,0,0,0.08);
+  }
+  .theme-swatch{
+    padding: 16px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+</style>
