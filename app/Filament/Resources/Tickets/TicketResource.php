@@ -22,6 +22,7 @@ class TicketResource extends Resource
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
+            ->poll('5s')
             // biar nggak N+1 waktu akses relasi 'registration'
             // ->modifyQueryUsing(fn ($query) => $query->with('registration'))
 
@@ -32,11 +33,11 @@ class TicketResource extends Resource
                 TextColumn::make('registration.ticket_url')
                     ->label('Link')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => filled($state) ? 'Buka' : '—')
-                    ->color(fn ($state) => filled($state) ? 'success' : 'gray')
-                    ->url(fn ($record) => $record->registration?->ticket_url ?: null)
+                    ->formatStateUsing(fn($state) => filled($state) ? 'Buka' : '—')
+                    ->color(fn($state) => filled($state) ? 'success' : 'gray')
+                    ->url(fn($record) => $record->registration?->ticket_url ?: null)
                     ->openUrlInNewTab()
-                    ->tooltip(fn ($record) => $record->registration?->ticket_url ?: 'Tidak ada tautan'),
+                    ->tooltip(fn($record) => $record->registration?->ticket_url ?: 'Tidak ada tautan'),
             ])
 
             // di v4, ini tetap valid sebagai record actions

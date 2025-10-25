@@ -32,7 +32,7 @@ use UnitEnum;
 class RegistrationResource extends Resource
 {
     protected static ?string $model = Registration::class;
-    protected static string | UnitEnum | null $navigationGroup = 'Operasional';
+    protected static string|UnitEnum|null $navigationGroup = 'Operasional';
     protected static ?string $navigationLabel = 'Registrasi';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQueueList;
@@ -47,6 +47,7 @@ class RegistrationResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->poll('5s')
             ->columns([
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('phone')->label('Phone Number'),
@@ -137,6 +138,7 @@ class RegistrationResource extends Resource
                     ->label('Blast T-1')
                     ->action(fn(Collection $records) => $records->each(fn($r) => SendTicketWaJob::dispatch($r->id))),
             ]);
+
     }
 
 

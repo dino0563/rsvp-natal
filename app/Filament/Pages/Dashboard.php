@@ -43,14 +43,32 @@ class Dashboard extends BaseDashboard
                     return Response::streamDownload(function () {
                         $out = fopen('php://output', 'w');
                         fputcsv($out, [
-                            'id','name','phone','age','education_level','school','church',
-                            'status_ticket','wa_last_status','created_at'
+                            'id',
+                            'name',
+                            'phone',
+                            'age',
+                            'education_level',
+                            'school',
+                            'church',
+                            'status_ticket',
+                            'wa_last_status',
+                            'created_at'
                         ]);
 
-                        foreach (Registration::select([
-                            'id','name','phone','age','education_level','school','church',
-                            'status_ticket','wa_last_status','created_at'
-                        ])->cursor() as $r) {
+                        foreach (
+                            Registration::select([
+                                'id',
+                                'name',
+                                'phone',
+                                'age',
+                                'education_level',
+                                'school',
+                                'church',
+                                'status_ticket',
+                                'wa_last_status',
+                                'created_at'
+                            ])->cursor() as $r
+                        ) {
                             fputcsv($out, [
                                 $r->id,
                                 $r->name,
@@ -114,6 +132,9 @@ class Dashboard extends BaseDashboard
             \App\Filament\Widgets\DashboardStats::class,
             \App\Filament\Widgets\SubmitByHourChart::class,
             \App\Filament\Widgets\OpenByHourChart::class,
+            \App\Filament\Widgets\QuickLookRegistrations::class,
+
         ];
     }
 }
+
