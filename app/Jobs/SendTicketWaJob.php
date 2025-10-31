@@ -12,6 +12,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
+use App\Support\Settings as AppSettings;
+
 
 class SendTicketWaJob implements ShouldQueue
 {
@@ -44,25 +46,40 @@ class SendTicketWaJob implements ShouldQueue
         // Pastikan APP_URL kamu real dan pakai https kalau bisa
         $ticketUrl = $r->ticket_url; // misal sudah "https://rsvp-natal.test/t/W0X6MNMV"
 
+        $template = AppSettings::get('registration_message');
         // Taruh link di baris sendiri biar auto-link
-        $text = sprintf(
-            "🎄 *%s* 🎄\n" .
-                "Halo %s! _Tiketmu sudah siap._ ✨\n\n" .
-                "🧾 *E-Ticket:*\n%s\n\n" .
-                "🗓️ *Tanggal:* %s\n" .
-                "🕕 *Waktu:* %s\n" .
-                "📍 *Tempat:* %s\n" .
-                "👗 *Dresscode:* %s\n\n" .
-                "> _Datang 15 menit lebih awal untuk check-in QR dan nikmati suasana dari awal._\n\n" .
-                "*Sampai ketemu di sana!* 🎉",
-            $s->event_name ?? 'Natal Teens X Youth 2025',
-            $r->name ?? '-',
-            $ticketUrl ?? '-',
-            ($s->event_date ?? ($s->date ?? '-')),
-            $s->gate_time ?? '-',
-            ($s->venue ?? ($s->location ?? '-')),
-            $s->dresscode ?? '-'
-        );
+        if (! is_string($template) || trim($template) === '') {
+            $template = <<<TXT
+🎄 *{event_name}* 🎄
+Halo {name}! _Tiketmu sudah siap._ ✨
+
+🧾 *E-Ticket:*
+{ticket_url}
+
+🗓️ *Tanggal:* {event_date}
+🕕 *Waktu:* {gate_time}
+📍 *Tempat:* {location}
+👗 *Dresscode:* {dresscode}
+
+> _Datang 15 menit lebih awal untuk check-in QR dan nikmati suasana dari awal._
+
+*Sampai ketemu di sana!* 🎉
+TXT;
+        }
+
+        // Siapkan nilai pengganti
+        $values = [
+            '{event_name}' => $s->event_name ?? 'Natal Teens X Youth 2025',
+            '{name}'       => $r->name ?? '-',
+            '{ticket_url}' => $ticketUrl ?? '-',
+            '{event_date}' => $s->event_date ?? ($s->date ?? '-'),
+            '{gate_time}'  => $s->gate_time ?? '-',
+            '{location}'   => $s->venue ?? ($s->location ?? '-'),
+            '{dresscode}'  => $s->dresscode ?? '-',
+        ];
+
+        // Substitusi token ke teks final
+        $text = strtr($template, $values);
 
 
         try {

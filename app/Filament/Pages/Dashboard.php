@@ -9,23 +9,51 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Support\Icons\Heroicon;
+use Filament\Schemas\Contracts\HasSchemas;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Response;
 use UnitEnum;
+use App\Filament\Widgets\DashboardStats;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 
-class Dashboard extends BaseDashboard
+class Dashboard extends BaseDashboard implements HasSchemas
 {
+
+    use InteractsWithSchemas;
     protected static string|UnitEnum|null $navigationGroup = 'Operasional';
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHome;
     protected static ?string $navigationLabel = 'Dashboard';
 
     // protected static ?string $maxContentWidth = '7xl';
     // Grid 12 kolom biar gampang atur span widget
+
+
     public function getColumns(): int|array
     {
         return [
             'md' => 1,
             'lg' => 12,
+        ];
+    }
+
+    /** @var array<string,mixed> */
+    public array $filters = [];
+
+    public function mount(): void
+    {
+        $this->filters = [
+            'date_preset'  => 'today',   // today | 7d | custom
+            'start_date'   => null,      // required if custom
+            'end_date'     => null,
+            'church'       => null,      // gereja
+            'channel'      => null,
+            'wa_status'    => [],        // ['sent','delivered','read','failed']
+            'ticket_status' => null,      // sent | pending | null
         ];
     }
 
@@ -86,50 +114,115 @@ class Dashboard extends BaseDashboard
                         fclose($out);
                     }, $filename, ['Content-Type' => 'text/csv']);
                 }),
-
-            // Blast T-1 (pakai command campaign:run T-1)
-            Action::make('blastT1')
-                ->label('Blast T-1')
-                ->icon('heroicon-o-bolt')
-                ->color('warning')
-                ->requiresConfirmation()
-                ->action(function () {
-                    Artisan::call('campaign:run', ['key' => 'T-1']);
-                    Notification::make()->title('Blast T-1 dijadwalkan')->success()->send();
-                }),
-
-            // Resend untuk yang gagal/blocked
-            Action::make('resendFailed')
-                ->label('Resend gagal')
-                ->icon('heroicon-o-paper-airplane')
-                ->color('danger')
-                ->requiresConfirmation()
-                ->action(function () {
-                    $count = 0;
-
-                    Registration::query()
-                        ->whereIn('wa_last_status', ['failed', 'blocked'])
-                        ->select('id')                       // cukup id saja, lebih ringan
-                        ->orderBy('id')
-                        ->chunkById(500, function ($rows) use (&$count) {
-                            foreach ($rows as $r) {
-                                SendTicketWaJob::dispatch($r->id);
-                                $count++;
-                            }
-                        });
-
-                    Notification::make()
-                        ->title("Resend dijadwalkan untuk {$count} orang")
-                        ->success()
-                        ->send();
-                }),
         ];
     }
+
+    public function getHeaderWidgets(): array
+    {
+        // Pass seluruh filters ke widget
+        return [
+            DashboardStats::make([
+                'filters' => $this->filters,
+            ]),
+        ];
+    }
+
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Segmentation & Filters')
+                    ->schema([
+                        Grid::make(12)->schema([
+
+                            // WAS: Select::make('filters.date_preset')
+                            Select::make('date_preset')
+                                ->label('Date range')
+                                ->options([
+                                    'today'  => 'Today',
+                                    '7d'     => 'Last 7 days',
+                                    'custom' => 'Custom',
+                                ])
+                                ->native(false)
+                                ->live()
+                                ->columnSpan(3),
+
+                            // WAS: DatePicker::make('filters.start_date')
+                            DatePicker::make('start_date')
+                                ->label('Start')
+                                ->native(false)
+                                ->visible(fn($get) => $get('date_preset') === 'custom')
+                                ->columnSpan(2),
+
+                            // WAS: DatePicker::make('filters.end_date')
+                            DatePicker::make('end_date')
+                                ->label('End')
+                                ->native(false)
+                                ->visible(fn($get) => $get('date_preset') === 'custom')
+                                ->columnSpan(2),
+
+                            // WAS: Select::make('filters.church')
+                            Select::make('church')
+                                ->label('Gereja')
+                                ->options(fn() => Registration::query()
+                                    ->whereNotNull('church')
+                                    ->distinct()
+                                    ->orderBy('church')
+                                    ->pluck('church', 'church')
+                                    ->all())
+                                ->searchable()
+                                ->preload()
+                                ->native(false)
+                                ->columnSpan(2),
+
+                            // WAS: Select::make('filters.channel')
+                            Select::make('channel')
+                                ->label('Channel')
+                                ->options(fn() => Registration::query()
+                                    ->whereNotNull('channel')
+                                    ->distinct()
+                                    ->orderBy('channel')
+                                    ->pluck('channel', 'channel')
+                                    ->all())
+                                ->searchable()
+                                ->preload()
+                                ->native(false)
+                                ->columnSpan(3),
+
+                            // WAS: Select::make('filters.wa_status')
+                            Select::make('wa_status')
+                                ->label('Status WA')
+                                ->options([
+                                    'sent'      => 'Sent',
+                                    'delivered' => 'Delivered',
+                                    'read'      => 'Read',
+                                    'failed'    => 'Failed',
+                                ])
+                                ->multiple()
+                                ->native(false)
+                                ->columnSpan(3),
+
+                            // WAS: Select::make('filters.ticket_status')
+                            Select::make('ticket_status')
+                                ->label('Status Tiket')
+                                ->options([
+                                    'sent'    => 'Sent',
+                                    'pending' => 'Pending',
+                                ])
+                                ->native(false)
+                                ->columnSpan(2),
+                        ]),
+                    ]),
+            ])
+            ->statePath('filters'); // ini tetap
+    }
+
+
 
     public function getWidgets(): array
     {
         return [
-            \App\Filament\Widgets\DashboardStats::class,
+            // \App\Filament\Widgets\DashboardStats::class,
             \App\Filament\Widgets\SubmitByHourChart::class,
             \App\Filament\Widgets\OpenByHourChart::class,
             \App\Filament\Widgets\QuickLookRegistrations::class,
@@ -137,4 +230,3 @@ class Dashboard extends BaseDashboard
         ];
     }
 }
-
