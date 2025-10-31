@@ -22,14 +22,19 @@ class TicketResource extends Resource
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
-            ->poll('5s')
+            ->poll('3s')
             // biar nggak N+1 waktu akses relasi 'registration'
-            // ->modifyQueryUsing(fn ($query) => $query->with('registration'))
-
+            ->modifyQueryUsing(fn ($query) => $query->with('registration'))
             ->columns([
                 TextColumn::make('code')->label('Kode')->searchable(),
                 TextColumn::make('registration.name')->label('Nama')->toggleable(),
                 TextColumn::make('used_at')->label('Dipakai')->since()->placeholder('—'),
+                TextColumn::make('staff.name')
+                    ->label('Dipindai oleh')
+                    ->placeholder('—')
+                    ->sortable()
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('registration.ticket_url')
                     ->label('Link')
                     ->badge()

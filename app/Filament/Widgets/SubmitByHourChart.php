@@ -34,9 +34,19 @@ class SubmitByHourChart extends ChartWidget
                 'data'  => $buckets,
             ]],
             'labels' => array_map(
-                fn ($h) => str_pad((string) $h, 2, '0', STR_PAD_LEFT) . ':00',
+                fn($h) => str_pad((string) $h, 2, '0', STR_PAD_LEFT) . ':00',
                 range(0, 23)
             ),
+            'scales' => [
+                'y' => [
+                    'beginAtZero' => true,
+                    'ticks' => [
+                        'precision' => 0,
+                        // Optional biar gak muncul koma sama sekali:
+                        'stepSize' => 1,
+                    ],
+                ],
+            ],
         ];
     }
 

@@ -22,10 +22,11 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\ViewField; // <-- alias biar gak nabrak \App\...View
+use Filament\Forms\Components\ViewField;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Textarea; // <— tambahkan ini
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 
@@ -33,28 +34,63 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Route;
 use App\Support\Settings as AppSettings;
 
+use Livewire\WithFileUploads;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+
 class Settings extends Page implements HasSchemas
 {
-    use InteractsWithSchemas;
+    /**
+     * @var array<string, mixed>|null
+     */
 
-    protected static string|UnitEnum|null $navigationGroup = 'Setup';
+    use InteractsWithSchemas;
+    use WithFileUploads;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Settings';
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
-    protected static ?string $navigationLabel = 'Pengaturan';
+    protected static ?string $navigationLabel = 'Page Settings';
 
     public function getView(): string
     {
         return 'filament.pages.settings';
     }
 
-    public array $data = [];
+    public ?array $data = [];
 
     public function mount(): void
     {
         $g = fn(string $k, $d = null) => method_exists(AppSettings::class, 'get') ? AppSettings::get($k, $d) : $d;
 
+        // Ambil nilai tersimpan
+        $storedBanner = $g('banner_path');
+
+        // Normalisasi ke bentuk array untuk state form
+        $bannerState = match (true) {
+            is_array($storedBanner) => $storedBanner,
+            is_string($storedBanner) && $storedBanner !== '' => [$storedBanner],
+            default => [],
+        };
+
         $formBase   = $g('theme_form_base');
         $ticketBase = $g('theme_ticket_base');
         $errBase    = $g('theme_404_base');
+
+        $defaultRegistrationMessage = <<<TXT
+🎄 *{event_name}* 🎄
+Halo {name}! _Tiketmu sudah siap._ ✨
+
+🧾 *E-Ticket:*
+{ticket_url}
+
+🗓️ *Tanggal:* {event_date}
+🕕 *Waktu:* {gate_time}
+📍 *Tempat:* {location}
+👗 *Dresscode:* {dresscode}
+
+> _Datang 15 menit lebih awal untuk check-in QR dan nikmati suasana dari awal._
+
+*Sampai ketemu di sana!* 🎉
+TXT;
 
         $this->data = [
             'event_name' => $g('event_name', ''),
@@ -68,11 +104,13 @@ class Settings extends Page implements HasSchemas
             'callback_token' => $g('callback_token', ''),
             'retention_days' => (int) $g('retention_days', 90),
             'callback_url'   => Route::has('webhooks.fonnte') ? route('webhooks.fonnte') : url('/webhooks/fonnte'),
-            'banner_path'        => $g('banner_path', ''),
-            'theme_bg_cream'     => $g('theme_bg_cream', '#fff6e8'),
+
+            'banner_path' => $bannerState,
+
+            'theme_bg_cream'      => $g('theme_bg_cream', '#fff6e8'),
             'theme_surface_paper' => $g('theme_surface_paper', '#fff9f1'),
-            'theme_accent_pine'  => $g('theme_accent_pine', '#165b36'),
-            'theme_accent_gold'  => $g('theme_accent_gold', '#d9b86c'),
+            'theme_accent_pine'   => $g('theme_accent_pine', '#165b36'),
+            'theme_accent_gold'   => $g('theme_accent_gold', '#d9b86c'),
             'theme_brand_primary' => $g('theme_brand_primary', '#8d1e2c'),
 
             // override per-section (opsional)
@@ -82,6 +120,9 @@ class Settings extends Page implements HasSchemas
 
             // toggle untuk menyalakan override per halaman
             'use_custom_page_colors' => (bool) ($formBase || $ticketBase || $errBase),
+
+            'capacity'               => (int) $g('capacity', 0),
+            'registration_message'   => (string) $g('registration_message', $defaultRegistrationMessage),
         ];
     }
 
@@ -95,12 +136,17 @@ class Settings extends Page implements HasSchemas
                         FileUpload::make('banner_path')
                             ->label('Banner hero (16:9 disarankan)')
                             ->image()
-                            ->directory('banners')
-                            ->disk('public')
-                            ->visibility('public')
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->maxSize(4096)
+                            ->disk('public')               // storage/app/public
+                            ->directory('banners')
+                            ->visibility('public')
                             ->preserveFilenames()
-                            ->helperText('Saran 1600×900 JPG/PNG, max 4 MB.')
+                            ->multiple(false)
+                            ->default([])
+                            ->nullable()
+                            // no afterStateUpdated; we handle everything on save()
+                            ->helperText('Saran 1600×900 JPG/PNG/WebP, max 4 MB.')
                             ->columnSpan(6),
                     ]),
 
@@ -124,6 +170,26 @@ class Settings extends Page implements HasSchemas
                                 ->default('Asia/Jakarta')
                                 ->native(false)
                                 ->columnSpan(6),
+                        ]),
+                    ]),
+
+                Section::make('Kapasitas & Pesan Registrasi')
+                    ->description('Atur kapasitas maksimal dan template pesan WA setelah registrasi.')
+                    ->schema([
+                        Grid::make(12)->schema([
+                            TextInput::make('capacity')
+                                ->label('Kapasitas Maksimal')
+                                ->numeric()
+                                ->minValue(0)
+                                ->default(0)
+                                ->helperText('0 berarti tidak dibatasi di sisi aplikasi.')
+                                ->columnSpan(4),
+
+                            Textarea::make('registration_message')
+                                ->label('Template Pesan Tiket (WA)')
+                                ->rows(12)
+                                ->helperText('Gunakan token: {event_name}, {name}, {ticket_url}, {event_date}, {gate_time}, {location}, {dresscode}')
+                                ->columnSpan(12),
                         ]),
                     ]),
 
@@ -166,7 +232,6 @@ class Settings extends Page implements HasSchemas
                             ->inline(false)
                             ->afterStateUpdated(function (bool $state, Set $set) {
                                 if (! $state) {
-                                    // bersihkan override ketika dimatikan
                                     $set('theme_form_base', null);
                                     $set('theme_ticket_base', null);
                                     $set('theme_404_base', null);
@@ -174,7 +239,6 @@ class Settings extends Page implements HasSchemas
                             }),
 
                         Grid::make(15)->schema([
-                            // override khusus per-section: muncul hanya saat toggle aktif
                             ColorPicker::make('theme_form_base')
                                 ->label('Base: Form (opsional)')
                                 ->nullable()
@@ -208,23 +272,14 @@ class Settings extends Page implements HasSchemas
                                 'paper'    => $get('theme_surface_paper') ?: '#fff9f1',
                                 'pine'     => $get('theme_accent_pine')   ?: '#165b36',
                                 'gold'     => $get('theme_accent_gold')   ?: '#d9b86c',
-
-                                // brand global default
                                 'brand'    => $get('theme_brand_primary') ?: '#8d1e2c',
-
-                                // override per halaman (bisa null)
                                 'form'     => $get('theme_form_base')   ?? null,
                                 'ticket'   => $get('theme_ticket_base') ?? null,
                                 'brand404' => $get('theme_404_base')    ?? null,
-
-                                // split mode kalau custom ON
                                 'split'    => (bool) $get('use_custom_page_colors'),
-
-                                // single-target fallback saat custom OFF
                                 'target'   => $get('preview_target') ?: 'form',
                             ])
                             ->columnSpanFull(),
-
                     ]),
             ])
             ->statePath('data');
@@ -232,41 +287,88 @@ class Settings extends Page implements HasSchemas
 
     public function save(): void
     {
-        $data = $this->data;
+        $data = $this->form->getState();
+
+        $raw = $data['banner_path'] ?? [];
+        $bannerPath = is_array($raw) ? ($raw[0] ?? null) : (is_string($raw) ? $raw : null);
 
         $useCustom = (bool) ($data['use_custom_page_colors'] ?? false);
 
         AppSettings::setMany([
-            'event_name' => $data['event_name'] ?? '',
-            'event_date' => $data['event_date'] ?? null,
-            'location'   => $data['location'] ?? '',
-            'map_link'   => $data['map_link'] ?? '',
-            'dresscode'  => $data['dresscode'] ?? '',
-            'gate_time'  => $data['gate_time'] ?? '',
-            'timezone'   => $data['timezone'] ?? 'Asia/Jakarta',
+            'event_name'     => $data['event_name'] ?? '',
+            'event_date'     => $data['event_date'] ?? null,
+            'location'       => $data['location'] ?? '',
+            'map_link'       => $data['map_link'] ?? '',
+            'dresscode'      => $data['dresscode'] ?? '',
+            'gate_time'      => $data['gate_time'] ?? '',
+            'timezone'       => $data['timezone'] ?? 'Asia/Jakarta',
             'fonnte_token'   => $data['fonnte_token'] ?? '',
             'callback_token' => $data['callback_token'] ?? '',
             'retention_days' => (string) (int) ($data['retention_days'] ?? 90),
-
+             'capacity'             => (string) (int) ($data['capacity'] ?? 0),
+            'registration_message' => (string) ($data['registration_message'] ?? ''),
             'theme_bg_cream'      => $data['theme_bg_cream'] ?? '#fff6e8',
             'theme_surface_paper' => $data['theme_surface_paper'] ?? '#fff9f1',
             'theme_accent_pine'   => $data['theme_accent_pine'] ?? '#165b36',
             'theme_accent_gold'   => $data['theme_accent_gold'] ?? '#d9b86c',
             'theme_brand_primary' => $data['theme_brand_primary'] ?? '#8d1e2c',
-
-            // override per-section: dipaksa null jika toggle dimatikan
-            'theme_form_base'     => $useCustom ? ($data['theme_form_base']   ?? null) : null,
-            'theme_ticket_base'   => $useCustom ? ($data['theme_ticket_base'] ?? null) : null,
-            'theme_404_base'      => $useCustom ? ($data['theme_404_base']    ?? null) : null,
-
-            'banner_path' => $data['banner_path'] ?? '',
+            'theme_form_base'   => $useCustom ? ($data['theme_form_base']   ?? null) : null,
+            'theme_ticket_base' => $useCustom ? ($data['theme_ticket_base'] ?? null) : null,
+            'theme_404_base'    => $useCustom ? ($data['theme_404_base']    ?? null) : null,
+            'banner_path' => $bannerPath ?? '',
         ]);
 
         AppSettings::forget();
 
-        Notification::make()
-            ->title('Pengaturan disimpan')
-            ->success()
-            ->send();
+        Notification::make()->title('Pengaturan disimpan')->success()->send();
+    }
+
+
+    // $useCustom = (bool) ($data['use_custom_page_colors'] ?? false);
+    // AppSettings::setMany([
+    //         'event_name' => $data['event_name'] ?? '',
+    //         'event_date' => $data['event_date'] ?? null,
+    //         'location'   => $data['location'] ?? '',
+    //         'map_link'   => $data['map_link'] ?? '',
+    //         'dresscode'  => $data['dresscode'] ?? '',
+    //         'gate_time'  => $data['gate_time'] ?? '',
+    //         'timezone'   => $data['timezone'] ?? 'Asia/Jakarta',
+    //         'fonnte_token'   => $data['fonnte_token'] ?? '',
+    //         'callback_token' => $data['callback_token'] ?? '',
+    //         'retention_days' => (string) (int) ($data['retention_days'] ?? 90),
+
+    //         'theme_bg_cream'      => $data['theme_bg_cream'] ?? '#fff6e8',
+    //         'theme_surface_paper' => $data['theme_surface_paper'] ?? '#fff9f1',
+    //         'theme_accent_pine'   => $data['theme_accent_pine'] ?? '#165b36',
+    //         'theme_accent_gold'   => $data['theme_accent_gold'] ?? '#d9b86c',
+    //         'theme_brand_primary' => $data['theme_brand_primary'] ?? '#8d1e2c',
+
+    //         'theme_form_base'   => $useCustom ? ($data['theme_form_base']   ?? null) : null,
+    //         'theme_ticket_base' => $useCustom ? ($data['theme_ticket_base'] ?? null) : null,
+    //         'theme_404_base'    => $useCustom ? ($data['theme_404_base']    ?? null) : null,
+
+    //         'banner_path' => $data['banner_path'] ?: null,
+    //     ]);
+    /**
+     * If $token is a Livewire tmp token, convert and store it.
+     * If it already looks like a stored path (starts with "banners/"), return as-is.
+     * Otherwise, return null on nonsense.
+     */
+    protected function storeFromTokenIfNeeded(string $token): ?string
+    {
+        // already a stored path
+        if (preg_match('~^banners/[^/]+\.(?:jpe?g|png|webp)$~i', $token)) {
+            return $token;
+        }
+
+        // livewire tmp files are kept under storage/app/livewire-tmp/<token>
+        $tmpPath = storage_path('app/livewire-tmp/' . ltrim($token, '/'));
+        if (is_file($tmpPath)) {
+            $tmp = TemporaryUploadedFile::createFromLivewire($token);
+            return $tmp->storePublicly('banners', 'public');
+        }
+
+        // nothing usable
+        return null;
     }
 }

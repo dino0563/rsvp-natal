@@ -26,6 +26,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
 use Swis\Filament\Backgrounds\FilamentBackgroundsPlugin;
 use App\Filament\Pages\Dashboard as AdminDashboard;
+use Filafly\Themes\Brisk\BriskTheme;
 
 
 
@@ -75,6 +76,7 @@ class AdminPanelProvider extends PanelProvider
                 FilamentShieldPlugin::make(),
                 // FilamentNordThemePlugin::make(),
                 FilamentBackgroundsPlugin::make(),
+                BriskTheme::make()->withoutSuggestedFont(),
                 BreezyCore::make()
                     ->myProfile(),
             ])
@@ -92,6 +94,7 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->viteTheme('resources/css/filament/admin/theme.css');
+            ->viteTheme('resources/css/filament/admin/theme.css')
+             ->renderHook('panels::body.end', fn () => view('filament.scripts.var-chips')); // taruh <script> kamu di view ini;
     }
 }
