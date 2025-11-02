@@ -20,11 +20,13 @@ use UnitEnum;
 use App\Filament\Widgets\DashboardStats;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 
 class Dashboard extends BaseDashboard implements HasSchemas
 {
 
-    use InteractsWithSchemas;
+    use InteractsWithSchemas, HasPageShield;
     protected static string|UnitEnum|null $navigationGroup = 'Operasional';
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHome;
     protected static ?string $navigationLabel = 'Dashboard';

@@ -7,6 +7,8 @@ use UnitEnum;
 
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Gate;
+
 
 // Schemas API
 use Filament\Schemas\Contracts\HasSchemas;
@@ -36,6 +38,7 @@ use App\Support\Settings as AppSettings;
 
 use Livewire\WithFileUploads;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class Settings extends Page implements HasSchemas
 {
@@ -45,6 +48,7 @@ class Settings extends Page implements HasSchemas
 
     use InteractsWithSchemas;
     use WithFileUploads;
+    use HasPageShield;
 
     protected static string|UnitEnum|null $navigationGroup = 'Settings';
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
@@ -59,6 +63,8 @@ class Settings extends Page implements HasSchemas
 
     public function mount(): void
     {
+        abort_unless(Gate::allows('viewSettings'), 403);
+
         $g = fn(string $k, $d = null) => method_exists(AppSettings::class, 'get') ? AppSettings::get($k, $d) : $d;
 
         // Ambil nilai tersimpan

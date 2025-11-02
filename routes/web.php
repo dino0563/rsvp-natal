@@ -15,11 +15,10 @@ Route::post('/rsvp', [PublicRegistrationController::class, 'store'])
 Route::get('/t/{code}', [TicketController::class, 'show'])->name('ticket.show');
 Route::get('/t/{code}/qr.png', [TicketController::class, 'image'])->name('ticket.qr');
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'can:Checkin:Scan'])->group(function () {
     Route::view('/checkin', 'checkin.index')->name('checkin');
     Route::post('/checkin/verify', [CheckinController::class, 'verify']);
     Route::get('/checkin/cache.json', [CheckinController::class, 'cacheTokens']);
     Route::post('/checkin/sync', [CheckinController::class, 'syncOffline']);
 });
 
-Route::get('/ping-web', fn() => 'pong-web:'.base_path());
